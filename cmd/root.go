@@ -17,11 +17,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
 
+	"github.com/spf13/cobra"
+
+	"github.com/asaskevich/govalidator"
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
+	"github.com/bogdanutanu/goadvisor/config"
 )
 
 var cfgFile string
@@ -73,8 +78,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatalf("Error finding home directory: %v", err)
 		}
 
 		// Search config in home directory with name ".goadvisor" (without extension).
@@ -86,6 +90,15 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Fatalf("Using config file: %s %v", viper.ConfigFileUsed(), err)
+	}
+
+	if err := viper.Unmarshal(config.Cfg); err != nil {
+
+	}
+
+	_, err := govalidator.ValidateStruct(config.Cfg)
+	if err != nil {
+		log.Fatalf("Error validating config: %v", err)
 	}
 }
