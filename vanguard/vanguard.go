@@ -1,8 +1,14 @@
 package vanguard
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/mxmCherry/movavg"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Data structures
@@ -45,12 +51,45 @@ func (v *vanguard) FetchLastNDays(days uint16) valuations {
 	twoHundredDaysAgo := now.AddDate(0, 0, -200)
 	twoHundredDaysAgoStr := twoHundredDaysAgo.Format(dateLayout)
 
-	resp, err := v.client.Get()
+	url := fmt.Sprintf(v.url, twoHundredDaysAgoStr, nowDateStr)
+	resp, err := v.client.Get(url)
+	if err != nil {
+		log.Errorf("Error making GET '%s': %v", url, err)
+		return nil
+	}
+	defer resp.Body.Close()
 
-	return nil
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Errorf("Non OK status code when GET %s: %d %s", resp, resp.StatusCode, resp.Status)
+		return nil
+	}
+
+	var vals valuations
+	err = json.NewDecoder(resp.Body).Decode(&vals)
+	if err != nil {
+		log.Errorf("Error decoding JSON response from Vanguard: %v", err)
+		return nil
+	}
+
+	return vals
 }
 
-func computeMovingAverage(vals valuations, ndays ...uint16) map[uint16]float64 {
+func computeMovingAverage(vals valuations, ndays int) float64 {
+	if ndays < 1 {
+		log.Errorf("Fuck off, gimme at least one day")
+		return -1
+	}
+	if len(vals) < ndays {
+		log.Errorf("You are asking me to compute average for %d days but only getting me %d valuations",
+			ndays, len(vals))
+		return -1
+	}
 
-	return nil
+	sma := movavg.NewSMA(ndays)
+
+	for i := len(vals) - ndays; i < ndays; i++ {
+
+	}
+
+	return sma.Avg()
 }
