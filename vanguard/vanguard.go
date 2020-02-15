@@ -1,8 +1,9 @@
 package vanguard
 
-import "net/http"
-
-import "time"
+import (
+	"net/http"
+	"time"
+)
 
 // Data structures
 
@@ -45,6 +46,11 @@ func (v *vanguard) FetchLastNDays(days uint16) valuations {
 	twoHundredDaysAgoStr := twoHundredDaysAgo.Format(dateLayout)
 
 	resp, err := v.client.Get()
+
+	return nil
+}
+
+func computeMovingAverage(vals valuations, ndays ...uint16) map[uint16]float64 {
 
 	return nil
 }
